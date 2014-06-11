@@ -11,10 +11,18 @@
 #include "stat.h"
 #include "param.h"
 
+int nblocks = 32696; // add 696 for line 101 will be ok
+int nlog = LOGSIZE;
+int ninodes = 200; // now in blocs is 50
+int size = 32768; // we need 8 blocks for the bitmap
+
+/*
+ * old settings
 int nblocks = 985;
 int nlog = LOGSIZE;
 int ninodes = 200;
 int size = 1024;
+*/
 
 int fsfd;
 struct superblock sb;

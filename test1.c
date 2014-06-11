@@ -51,6 +51,29 @@ main(int argc, char *argv[])
 			if(WriteBlock(fd,buf, 1908))
 			{
 				printf(1, "Finished writing 1MB \n");
+
+				/*
+				WriteBlock(fd,buf, 2048);
+				printf(1, "Finished writing 2MB \n");
+				WriteBlock(fd,buf, 2048);
+				printf(1, "Finished writing 3MB \n");
+				WriteBlock(fd,buf, 2048);
+				printf(1, "Finished writing 4MB \n");
+				WriteBlock(fd,buf, 2048);
+				printf(1, "Finished writing 5MB \n");
+				WriteBlock(fd,buf, 2048);
+				printf(1, "Finished writing 6MB \n");
+				WriteBlock(fd,buf, 2048);
+				printf(1, "Finished writing 7MB \n");
+				if(WriteBlock(fd,buf, 2048))
+				{
+					printf(1, "Finished writing 8MB \n");
+
+					if(WriteBlock(fd,buf, 200))
+					{
+						printf(1, "Finished writing more then 8MB \n");
+					}
+				} */
 			}
 		}
 	}

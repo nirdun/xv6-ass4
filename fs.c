@@ -358,6 +358,7 @@ bmap(struct inode *ip, uint bn)
 {
   uint addr, *a;
   struct buf *bp;
+  struct buf *bp_level2;
 
   if(bn < NDIRECT){
     if((addr = ip->addrs[bn]) == 0)
@@ -379,6 +380,42 @@ bmap(struct inode *ip, uint bn)
     brelse(bp);
     return addr;
   }
+
+  bn -= NINDIRECT;
+
+  if(bn < NDINDIRECT)
+  {
+	  // Load first level from double indirect block, allocating if necessary.
+	  if((addr = ip->addrs[NDIRECT + 1]) == 0)
+		ip->addrs[NDIRECT + 1] = addr = balloc(ip->dev);
+	  bp = bread(ip->dev, addr);
+	  a = (uint*)bp->data;
+
+	  uint entry = bn / NINDIRECT;
+	  bn = bn % NINDIRECT;
+
+	 // cprintf( "entry: %d, bn: %d \n", entry, bn);
+
+	  if((addr = a[entry]) == 0){
+		a[entry] = addr = balloc(ip->dev);
+		log_write(bp);
+	  }
+	  brelse(bp);
+
+	  // load second level from double indirect block
+	  bp_level2 = bread(ip->dev, addr);
+	  a = (uint*)bp_level2->data;
+
+	  if((addr = a[bn]) == 0)
+	  {
+		a[bn] = addr = balloc(ip->dev);
+		log_write(bp_level2);
+	  }
+	  brelse(bp_level2);
+
+	  return addr;
+  }
+
 
   panic("bmap: out of range");
 }
