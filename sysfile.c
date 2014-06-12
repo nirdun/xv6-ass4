@@ -402,6 +402,94 @@ sys_exec(void)
 
 int sys_fprot(void)
 {
+	char * pathName;
+	char * Password;
+	struct inode *ip;
+
+	// pathName parameter exist and is valid path
+	if(argstr(0, &pathName) < 0 || (ip = namei(pathName)) == 0)
+	    return -1;
+
+	// Password parameter exist
+	if(argstr(1, &Password) < 0)
+		return -1;
+
+	begin_trans();
+	ilock(ip);
+
+	// Fail if the file already open
+	if(ip->ref > 0)
+	{
+		iunlockput(ip);
+		commit_trans();
+		return -1;
+	}
+
+	// Fail if already password exist
+	if(ip->PasswordExist)
+	{
+		iunlockput(ip);
+		commit_trans();
+		return -1;
+	}
+
+	// Fail if the inode is not a file
+	if(ip->type != T_FILE)
+	{
+		iunlockput(ip);
+		commit_trans();
+		return -1;
+	}
+
+	ip->PasswordExist = 1;
+	memmove(ip->password, Password, sizeof(ip->password));
+
+	iupdate(ip);
+	iunlockput(ip);
+	commit_trans();
+
+	return 0;
+}
+
+int sys_funprot(void)
+{
+	char * pathName;
+	char * Password;
+	struct inode *ip;
+
+	// pathName parameter exist and is valid path
+	if(argstr(0, &pathName) < 0 || (ip = namei(pathName)) == 0)
+	    return -1;
+
+	// Password parameter exist
+	if(argstr(1, &Password) < 0)
+		return -1;
+
+	begin_trans();
+	ilock(ip);
+
+	// Finish if password not exist
+	if(ip->PasswordExist == 0)
+	{
+		iunlockput(ip);
+		commit_trans();
+		return 0;
+	}
+
+	// Check if is the same password
+	if(strncmp(ip->password, Password, sizeof(ip->password)))
+	{
+		iunlockput(ip);
+		commit_trans();
+		return -1;
+	}
+
+	ip->PasswordExist = 0;
+
+	iupdate(ip);
+	iunlockput(ip);
+	commit_trans();
+
 	return 0;
 }
 
@@ -410,10 +498,7 @@ int sys_funlock(void)
 	return 0;
 }
 
-int sys_funprot(void)
-{
-	return 0;
-}
+
 
 
 int

@@ -212,6 +212,10 @@ iupdate(struct inode *ip)
   dip->nlink = ip->nlink;
   dip->size = ip->size;
   memmove(dip->addrs, ip->addrs, sizeof(ip->addrs));
+
+  dip->PasswordExist = ip->PasswordExist;
+  memmove(dip->password, ip->password, sizeof(ip->password));
+
   log_write(bp);
   brelse(bp);
 }
@@ -289,6 +293,10 @@ ilock(struct inode *ip)
     ip->nlink = dip->nlink;
     ip->size = dip->size;
     memmove(ip->addrs, dip->addrs, sizeof(ip->addrs));
+
+    ip->PasswordExist = dip->PasswordExist;
+    memmove(ip->password, dip->password, sizeof(ip->password));
+
     brelse(bp);
     ip->flags |= I_VALID;
     if(ip->type == 0)
