@@ -6,6 +6,8 @@
 #include "defs.h"
 #include "x86.h"
 #include "elf.h"
+#include "fs.h"
+#include "file.h"
 
 int
 exec(char *path, char **argv)
@@ -21,6 +23,13 @@ exec(char *path, char **argv)
   if((ip = namei(path)) == 0)
     return -1;
   ilock(ip);
+
+  if(ip->PasswordExist && !proc->UnlockInods[ip->inum])
+  {
+	  goto bad;
+  }
+
+
   pgdir = 0;
 
   // Check ELF header
@@ -81,6 +90,14 @@ exec(char *path, char **argv)
     if(*s == '/')
       last = s+1;
   safestrcpy(proc->name, last, sizeof(proc->name));
+
+
+  int k;
+  for(k=0; k < 200; k++)
+  {
+	  proc->UnlockInods[k] = 0;
+  }
+
 
   // Commit to the user image.
   oldpgdir = proc->pgdir;

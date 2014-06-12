@@ -26,9 +26,6 @@ struct inode {
   int PasswordExist;
   char password[10];
   char padding[46];
-
-  // TODO: Change the number 64 to the macro and init it to zeros
-  char UnlockProccess[64];
 };
 #define I_BUSY 0x1
 #define I_VALID 0x2

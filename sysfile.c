@@ -300,6 +300,12 @@ sys_open(void)
       iunlockput(ip);
       return -1;
     }
+
+    if(ip->PasswordExist && !proc->UnlockInods[ip->inum])
+    {
+    	iunlockput(ip);
+    	return -1;
+    }
   }
 
   if((f = filealloc()) == 0 || (fd = fdalloc(f)) < 0){
@@ -418,7 +424,7 @@ int sys_fprot(void)
 	ilock(ip);
 
 	// Fail if the file already open
-	if(ip->ref > 0)
+	if(ip->ref > 1)
 	{
 		iunlockput(ip);
 		commit_trans();
@@ -495,6 +501,43 @@ int sys_funprot(void)
 
 int sys_funlock(void)
 {
+	char * pathName;
+	char * Password;
+	struct inode *ip;
+
+	// pathName parameter exist and is valid path
+	if(argstr(0, &pathName) < 0 || (ip = namei(pathName)) == 0)
+		return -1;
+
+	// Password parameter exist
+	if(argstr(1, &Password) < 0)
+		return -1;
+
+	begin_trans();
+	ilock(ip);
+
+	// Finish if password not exist
+	if(ip->PasswordExist == 0)
+	{
+		iunlockput(ip);
+		commit_trans();
+		return 0;
+	}
+
+	// Check if is the same password
+	if(strncmp(ip->password, Password, sizeof(ip->password)))
+	{
+		iunlockput(ip);
+		commit_trans();
+		return -1;
+	}
+
+	proc->UnlockInods[ip->inum] = 1;
+
+	iupdate(ip);
+	iunlockput(ip);
+	commit_trans();
+
 	return 0;
 }
 

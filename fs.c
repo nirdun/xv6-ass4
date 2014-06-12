@@ -23,6 +23,17 @@
 #define min(a, b) ((a) < (b) ? (a) : (b))
 static void itrunc(struct inode*);
 
+void ResetLock(struct inode *ip)
+{
+	ip->PasswordExist = 0;
+
+	/*int i;
+	for(i = 0; i<64; ++i)
+	{
+		ip->UnlockProccess[i] = 0;
+	}*/
+}
+
 // Read the super block.
 void
 readsb(int dev, struct superblock *sb)
@@ -251,6 +262,9 @@ iget(uint dev, uint inum)
   ip->inum = inum;
   ip->ref = 1;
   ip->flags = 0;
+
+  ResetLock(ip);
+
   release(&icache.lock);
 
   return ip;

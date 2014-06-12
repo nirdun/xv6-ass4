@@ -155,6 +155,11 @@ fork(void)
       np->ofile[i] = filedup(proc->ofile[i]);
   np->cwd = idup(proc->cwd);
  
+  for(i=0; i < 200; i++)
+  {
+	 np->UnlockInods[i] =  proc->UnlockInods[i];
+  }
+
   pid = np->pid;
   np->state = RUNNABLE;
   safestrcpy(np->name, proc->name, sizeof(proc->name));
