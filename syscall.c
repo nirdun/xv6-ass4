@@ -81,6 +81,9 @@ extern int sys_chdir(void);
 extern int sys_close(void);
 extern int sys_dup(void);
 extern int sys_exec(void);
+extern int sys_fprot(void); // new func
+extern int sys_funlock(void); // new func
+extern int sys_funprot(void); // new func
 extern int sys_exit(void);
 extern int sys_fork(void);
 extern int sys_fstat(void);
@@ -107,6 +110,9 @@ static int (*syscalls[])(void) = {
 [SYS_read]    sys_read,
 [SYS_kill]    sys_kill,
 [SYS_exec]    sys_exec,
+[SYS_fprot]   sys_fprot,
+[SYS_funlock] sys_funlock,
+[SYS_funprot] sys_funprot,
 [SYS_fstat]   sys_fstat,
 [SYS_chdir]   sys_chdir,
 [SYS_dup]     sys_dup,

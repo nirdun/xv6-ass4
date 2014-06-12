@@ -400,6 +400,22 @@ sys_exec(void)
   return exec(path, argv);
 }
 
+int sys_fprot(void)
+{
+	return 0;
+}
+
+int sys_funlock(void)
+{
+	return 0;
+}
+
+int sys_funprot(void)
+{
+	return 0;
+}
+
+
 int
 sys_pipe(void)
 {
