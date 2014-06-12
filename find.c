@@ -16,7 +16,7 @@ char type;
 char*
 fmtname(char *path)
 {
-  static char buf[DIRSIZ+1];
+  //static char buf[DIRSIZ+1];
   char *p;
   
   // Find first character after last slash.
@@ -24,12 +24,15 @@ fmtname(char *path)
     ;
   p++;
   
+  return p;
+
+  // don't need all this shit
   // Return blank-padded name.
-  if(strlen(p) >= DIRSIZ)
-    return p;
-  memmove(buf, p, strlen(p));
-  memset(buf+strlen(p), ' ', DIRSIZ-strlen(p));
-  return buf;
+  //if(strlen(p) >= DIRSIZ)
+ //   return p;
+ // memmove(buf, p, strlen(p));
+ // memset(buf+strlen(p), ' ', DIRSIZ-strlen(p));
+ // return buf;
 }
 
 void
@@ -53,14 +56,25 @@ find(char *path)
   
   if(st.type==T_FILE || st.type==T_DIR)
   {
-    printf(1, "%s %d %d %d\n", fmtname(path), st.type, st.ino, st.size);
+	char* FileName = fmtname(path);
+
+	int Isprint = 1;
+	if((n && (strcmp(FileName,name)!=0)) ||
+	   (t && type =='d' && st.type!=T_DIR) ||
+	   (t && type =='f' && st.type!=T_FILE) ||
+	   ((s == 1) && st.size != size) ||
+	   ((s == 2) && st.size <= size) ||
+	   ((s == 3) && st.size >= size))
+	{
+		Isprint = 0;
+	}
+
+	if (Isprint)
+		printf(1, "%s %d %d %d\n", FileName, st.type, st.ino, st.size);
   }
   
-  if(st.type!=T_DIR)
+  if(st.type==T_DIR)
   {
-	  close(fd);
-	  return;
-  }
     if(strlen(path) + 1 + DIRSIZ + 1 > sizeof buf){
       printf(1, "find: path too long\n");
       return;
@@ -68,26 +82,20 @@ find(char *path)
     strcpy(buf, path);
     p = buf+strlen(buf);
     *p++ = '/';
-    while(read(fd, &de, sizeof(de)) == sizeof(de)){
-    	run++;
+
+    while(read(fd, &de, sizeof(de)) == sizeof(de))
+    {
+      run++;
       if(de.inum == 0 || run<3)
         continue;
+
       memmove(p, de.name, DIRSIZ);
       p[DIRSIZ] = 0;
-      //if(stat(buf, &st) < 0){
-     //   printf(1, "ls: cannot stat %s\n", buf);
-      //  continue;
-     // }
-     // printf(1, "%s %d %d %d\n", fmtname(buf), st.type, st.ino, st.size);
-      //if(run>2 && st.type==T_DIR )
-      //{
-    	  strcpy(buf2,buf);
-    	  find(buf2);
-     // }
 
-
+	  strcpy(buf2,buf);
+	  find(buf2);
     }
-
+  }
 
   close(fd);
 }
@@ -113,7 +121,7 @@ main(int argc, char *argv[])
 	  	  {
 		  	  printf(1,"something");
 	  	  }
-	  else if(strcmp(argv[i],"-filename")==0)
+	  else if(strcmp(argv[i],"-name")==0)
 	  	  {
 		  	  n=1;
 		  	  strcpy(name,argv[++i]);
@@ -121,12 +129,20 @@ main(int argc, char *argv[])
 	  else if(strcmp(argv[i],"-size")==0)
 	  	  {
 		  	  if(argv[++i][0]=='+')
+		  	  {
 		  		  s=2;
+		  		  size=atoi(&argv[i][1]);
+		  	  }
 		  	  else if(argv[i][0]=='-')
-		  		  	  s=3;
+		  	  {
+		  		  s=3;
+		  		size=atoi(&argv[i][1]);
+		  	  }
 		  	  else
+		  	  {
 		  		  s=1;
-		  	  size=atoi(&argv[i][1]);
+		  		size=atoi(&argv[i][0]);
+		  	  }
 	  	  }
 	  else if(strcmp(argv[i],"-type")==0)
 	  	  {

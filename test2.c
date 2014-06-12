@@ -38,7 +38,7 @@ main(int argc, char *argv[])
 
   if(fork() == 0)
   {
-	  if(funlock(path,pass) < 0)
+	  if(funlock(path,pass	) < 0)
 	  {
 		  printf(2, "error funlock...\n");
 	  }
