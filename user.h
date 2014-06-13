@@ -1,3 +1,4 @@
+#include "stddef.h"
 struct stat;
 
 // system calls
@@ -16,6 +17,8 @@ int funprot(char*, char*);
 int open(char*, int);
 int mknod(char*, short, short);
 int unlink(char*);
+int symlink(const char*, const char*);
+int readlink(const char*, char*, size_t);
 int fstat(int fd, struct stat*);
 int link(char*, char*);
 int mkdir(char*);

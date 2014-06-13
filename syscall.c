@@ -97,7 +97,9 @@ extern int sys_pipe(void);
 extern int sys_read(void);
 extern int sys_sbrk(void);
 extern int sys_sleep(void);
-extern int sys_unlink(void);
+extern int sys_unlink(void); // new func
+extern int sys_symlink(void); // new func
+extern int sys_readlink(void);
 extern int sys_wait(void);
 extern int sys_write(void);
 extern int sys_uptime(void);
@@ -125,6 +127,8 @@ static int (*syscalls[])(void) = {
 [SYS_mknod]   sys_mknod,
 [SYS_unlink]  sys_unlink,
 [SYS_link]    sys_link,
+[SYS_symlink]    sys_symlink,
+[SYS_readlink]    sys_readlink,
 [SYS_mkdir]   sys_mkdir,
 [SYS_close]   sys_close,
 };

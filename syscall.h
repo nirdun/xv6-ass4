@@ -22,5 +22,7 @@
 #define SYS_mknod  20
 #define SYS_unlink 21
 #define SYS_link   22
-#define SYS_mkdir  23
-#define SYS_close  24
+#define SYS_symlink	23 // new sys call
+#define SYS_readlink	24 // new sys call
+#define SYS_mkdir  25
+#define SYS_close  26

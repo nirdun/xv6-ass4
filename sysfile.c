@@ -14,6 +14,8 @@
 #include "file.h"
 #include "fcntl.h"
 
+struct inode* recursive_readlink(char* pathname, int recursive_counter);
+
 // Fetch the nth word-sized system call argument as a file descriptor
 // and return both the descriptor and the corresponding struct file.
 static int
@@ -120,7 +122,7 @@ sys_link(void)
 
   if(argstr(0, &old) < 0 || argstr(1, &new) < 0)
     return -1;
-  if((ip = namei(old)) == 0)
+  if((ip = namei(old, 1)) == 0)
     return -1;
 
   begin_trans();
@@ -231,12 +233,16 @@ bad:
   return -1;
 }
 
+
+
+
+
 static struct inode*
-create(char *path, short type, short major, short minor)
+create(char *path, short type, short major, short minor, int mode) // mode 0-reference 1-derefernce
 {
   uint off;
   struct inode *ip, *dp;
-  char name[DIRSIZ];
+  char name[DIRSIZ], buf[100];
 
   if((dp = nameiparent(path, name)) == 0)
     return 0;
@@ -245,8 +251,32 @@ create(char *path, short type, short major, short minor)
   if((ip = dirlookup(dp, name, &off)) != 0){
     iunlockput(dp);
     ilock(ip);
+
+    if(ip->type == T_SYM) // the file is already exist and it is symbol link
+    {
+    	if(mode)
+    	{
+    		if(readi(ip,buf,0,ip->size) < 0 )
+    			{
+    				iunlockput(ip);
+    				return 0;
+    			}
+    		if((ip = recursive_readlink(buf,16)) == 0)
+    		{
+    			iunlockput(ip);
+    			return 0;
+    		}
+    	}
+    	else
+    	{
+    		return ip;
+    	}
+    }
+
     if(type == T_FILE && ip->type == T_FILE)
       return ip;
+
+
     iunlockput(ip);
     return 0;
   }
@@ -283,17 +313,18 @@ sys_open(void)
   int fd, omode;
   struct file *f;
   struct inode *ip;
+  int mode = 0;
 
   if(argstr(0, &path) < 0 || argint(1, &omode) < 0)
     return -1;
   if(omode & O_CREATE){
     begin_trans();
-    ip = create(path, T_FILE, 0, 0);
+    ip = create(path, T_FILE, 0, 0, !(mode & O_IDREF));
     commit_trans();
     if(ip == 0)
       return -1;
   } else {
-    if((ip = namei(path)) == 0)
+    if((ip = namei(path, !(mode & O_IDREF))) == 0)
       return -1;
     ilock(ip);
     if(ip->type == T_DIR && omode != O_RDONLY){
@@ -331,7 +362,7 @@ sys_mkdir(void)
   struct inode *ip;
 
   begin_trans();
-  if(argstr(0, &path) < 0 || (ip = create(path, T_DIR, 0, 0)) == 0){
+  if(argstr(0, &path) < 0 || (ip = create(path, T_DIR, 0, 0, 0)) == 0){
     commit_trans();
     return -1;
   }
@@ -352,7 +383,7 @@ sys_mknod(void)
   if((len=argstr(0, &path)) < 0 ||
      argint(1, &major) < 0 ||
      argint(2, &minor) < 0 ||
-     (ip = create(path, T_DEV, major, minor)) == 0){
+     (ip = create(path, T_DEV, major, minor, 0)) == 0){
     commit_trans();
     return -1;
   }
@@ -367,7 +398,7 @@ sys_chdir(void)
   char *path;
   struct inode *ip;
 
-  if(argstr(0, &path) < 0 || (ip = namei(path)) == 0)
+  if(argstr(0, &path) < 0 || (ip = namei(path, 1)) == 0)
     return -1;
   ilock(ip);
   if(ip->type != T_DIR){
@@ -413,7 +444,7 @@ int sys_fprot(void)
 	struct inode *ip;
 
 	// pathName parameter exist and is valid path
-	if(argstr(0, &pathName) < 0 || (ip = namei(pathName)) == 0)
+	if(argstr(0, &pathName) < 0 || (ip = namei(pathName, 1)) == 0)
 	    return -1;
 
 	// Password parameter exist
@@ -464,7 +495,7 @@ int sys_funprot(void)
 	struct inode *ip;
 
 	// pathName parameter exist and is valid path
-	if(argstr(0, &pathName) < 0 || (ip = namei(pathName)) == 0)
+	if(argstr(0, &pathName) < 0 || (ip = namei(pathName, 1)) == 0)
 	    return -1;
 
 	// Password parameter exist
@@ -506,7 +537,7 @@ int sys_funlock(void)
 	struct inode *ip;
 
 	// pathName parameter exist and is valid path
-	if(argstr(0, &pathName) < 0 || (ip = namei(pathName)) == 0)
+	if(argstr(0, &pathName) < 0 || (ip = namei(pathName, 1)) == 0)
 		return -1;
 
 	// Password parameter exist
@@ -566,4 +597,89 @@ sys_pipe(void)
   fd[0] = fd0;
   fd[1] = fd1;
   return 0;
+}
+
+
+//PAGEBREAK!
+int
+sys_symlink(void)
+{
+	char *new, *old;
+	struct inode  *ip;
+
+	if(argstr(0, &old) < 0 || argstr(1, &new) < 0)
+		return -1;
+	//if((ip = namei(old)) == 0)
+	//	return -1;
+
+	begin_trans();
+	ip = create(new, T_SYM, 0, 0, 0);
+
+	if (writei(ip, old,0, strlen(old)) < 0)
+		goto bad;
+	iunlockput(ip);
+	commit_trans();
+	return 0;
+
+	bad:
+	iunlockput(ip);
+	commit_trans();
+	return -1;
+}
+
+struct inode*
+recursive_readlink(char* pathname, int recursive_counter)
+{
+	cprintf("Enter recussive pathname: %s counter %d\n", pathname, recursive_counter);
+	struct inode *ip;
+	char buf[100];
+
+	if(recursive_counter == 0)
+	{
+		return 0;
+	}
+
+	ip = namei(pathname, 0);
+
+	ilock(ip);
+	if(ip->type!=T_SYM)
+	{
+		//iunlockput(ip);
+		return ip;
+	}
+
+	if (readi(ip, buf,0, ip->size) < 0)
+		goto bad;
+
+	iunlockput(ip);
+	cprintf("recursive counter %d\n",recursive_counter);
+	return recursive_readlink(buf,--recursive_counter);
+
+	bad:
+		iunlockput(ip);
+		return 0;
+}
+
+//PAGEBREAK!
+int
+sys_readlink(void)
+{
+	char *pathname;
+	char* buf;
+	int bufsize;
+	struct inode  *ip;
+
+	if(argstr(0, &pathname) < 0 || argstr(1, &buf) < 0 || argint(2,&bufsize)<0)
+		return -1;
+
+	if((ip = recursive_readlink(pathname, 16))==0)
+		return -1;
+	ilock(ip);
+	if(readi(ip,buf,0,bufsize) < 0 )
+	{
+		iunlock(ip);
+		return -1;
+	}
+
+	return 0;
 }

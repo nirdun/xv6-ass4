@@ -8,6 +8,9 @@ struct spinlock;
 struct stat;
 struct superblock;
 
+// sysfile.c
+struct inode* recursive_readlink(char* pathname, int recursive_counter);
+
 // bio.c
 void            binit(void);
 struct buf*     bread(uint, uint);
@@ -45,7 +48,7 @@ void            iunlock(struct inode*);
 void            iunlockput(struct inode*);
 void            iupdate(struct inode*);
 int             namecmp(const char*, const char*);
-struct inode*   namei(char*);
+struct inode*   namei(char*, int);
 struct inode*   nameiparent(char*, char*);
 int             readi(struct inode*, char*, uint, uint);
 void            stati(struct inode*, struct stat*);

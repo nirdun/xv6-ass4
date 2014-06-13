@@ -290,7 +290,13 @@ ilock(struct inode *ip)
   struct dinode *dip;
 
   if(ip == 0 || ip->ref < 1)
-    panic("ilock");
+  {
+	  cprintf("ip %d\n",ip);
+	  if(ip!=0)
+		  cprintf("ref %d\n",ip->ref);
+	  panic("ilock");
+  }
+
 
   acquire(&icache.lock);
   while(ip->flags & I_BUSY)
@@ -661,17 +667,19 @@ skipelem(char *path, char *name)
 // If parent != 0, return the inode for the parent and copy the final
 // path element into name, which must have room for DIRSIZ bytes.
 static struct inode*
-namex(char *path, int nameiparent, char *name)
+namex(char *path, int nameiparent, char *name, int mode) // mode - 0-reference 1-dereference
 {
+	cprintf("namex path %s nameiparent %d  mode %d\n", path, nameiparent, mode);
   struct inode *ip, *next;
-
+  char buf[100];
   if(*path == '/')
     ip = iget(ROOTDEV, ROOTINO);
   else
     ip = idup(proc->cwd);
 
   while((path = skipelem(path, name)) != 0){
-    ilock(ip);
+	  cprintf("path %s ip %d\n",path,ip);
+	 ilock(ip);
     if(ip->type != T_DIR){
       iunlockput(ip);
       return 0;
@@ -686,6 +694,14 @@ namex(char *path, int nameiparent, char *name)
       return 0;
     }
     iunlockput(ip);
+    if(next->type==T_SYM && (mode || *path!='\0') )
+    {
+
+    	readi(next,buf,0,next->size);
+    	next= recursive_readlink(buf,16);
+    	cprintf("next %d\n",next);
+
+    }
     ip = next;
   }
   if(nameiparent){
@@ -696,14 +712,14 @@ namex(char *path, int nameiparent, char *name)
 }
 
 struct inode*
-namei(char *path)
+namei(char *path, int mode)
 {
   char name[DIRSIZ];
-  return namex(path, 0, name);
+  return namex(path, 0, name, mode);
 }
 
 struct inode*
 nameiparent(char *path, char *name)
 {
-  return namex(path, 1, name);
+  return namex(path, 1, name, 0);
 }

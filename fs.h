@@ -33,7 +33,6 @@ struct dinode {
   uint size;            // Size of file (bytes)
   uint addrs[NDIRECT+2];   // Data block addresses, changed by us: uint addrs[NDIRECT+1];
 
-  // Oron, pay attention here about the extremly bug if we move PasswordExist after password
   int PasswordExist;
   char password[10];
   char padding[46];
