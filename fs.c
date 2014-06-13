@@ -697,7 +697,9 @@ namex(char *path, int nameiparent, char *name, int mode) // mode - 0-reference 1
     if(next->type==T_SYM && (mode || *path!='\0') )
     {
 
-    	readi(next,buf,0,next->size);
+    	int n = readi(next,buf,0,next->size);
+    	buf[n]='\0';
+    	cprintf("readi amount %d buffer %s\n",n, buf);
     	next= recursive_readlink(buf,16);
     	cprintf("next %d\n",next);
 

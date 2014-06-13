@@ -240,6 +240,7 @@ bad:
 static struct inode*
 create(char *path, short type, short major, short minor, int mode) // mode 0-reference 1-derefernce
 {
+	int n;
   uint off;
   struct inode *ip, *dp;
   char name[DIRSIZ], buf[100];
@@ -256,11 +257,15 @@ create(char *path, short type, short major, short minor, int mode) // mode 0-ref
     {
     	if(mode)
     	{
-    		if(readi(ip,buf,0,ip->size) < 0 )
+    		if((n = readi(ip,buf,0,ip->size)) < 0 )
     			{
     				iunlockput(ip);
     				return 0;
     			}
+    		else
+    		{
+    			buf[n]='\0';
+    		}
     		if((ip = recursive_readlink(buf,16)) == 0)
     		{
     			iunlockput(ip);
@@ -633,6 +638,7 @@ recursive_readlink(char* pathname, int recursive_counter)
 	cprintf("Enter recussive pathname: %s counter %d\n", pathname, recursive_counter);
 	struct inode *ip;
 	char buf[100];
+	int n;
 
 	if(recursive_counter == 0)
 	{
@@ -648,9 +654,9 @@ recursive_readlink(char* pathname, int recursive_counter)
 		return ip;
 	}
 
-	if (readi(ip, buf,0, ip->size) < 0)
+	if ((n = readi(ip, buf,0, ip->size)) < 0)
 		goto bad;
-
+	buf[n]='\0';
 	iunlockput(ip);
 	cprintf("recursive counter %d\n",recursive_counter);
 	return recursive_readlink(buf,--recursive_counter);
