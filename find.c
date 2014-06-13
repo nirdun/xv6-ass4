@@ -16,7 +16,7 @@ char type;
 char*
 fmtname(char *path)
 {
-  //static char buf[DIRSIZ+1];
+
   char *p;
   
   // Find first character after last slash.
@@ -26,13 +26,6 @@ fmtname(char *path)
   
   return p;
 
-  // don't need all this shit
-  // Return blank-padded name.
-  //if(strlen(p) >= DIRSIZ)
- //   return p;
- // memmove(buf, p, strlen(p));
- // memset(buf+strlen(p), ' ', DIRSIZ-strlen(p));
- // return buf;
 }
 
 void
@@ -44,12 +37,12 @@ find(char *path)
   struct stat st;
   
   if((fd = open(path, 0)) < 0){
-    printf(2, "ls: cannot open %s\n", path);
+    printf(2, "find: cannot open %s\n", path);
     return;
   }
   
   if(fstat(fd, &st) < 0){
-    printf(2, "ls: cannot stat %s\n", path);
+    printf(2, "find: cannot stat %s\n", path);
     close(fd);
     return;
   }
@@ -107,11 +100,8 @@ main(int argc, char *argv[])
   if(argc < 2){
     exit();
   }
-  if(argc < 3){
-    find(argv[1]);
-	exit();
-  }
-  for(i=2; i<argc; i++)
+
+  for(i=1; i<argc; i++)
   {
 	  if(strcmp(argv[i],"-follow")==0)
 	  {
@@ -119,7 +109,8 @@ main(int argc, char *argv[])
 	  }
 	  else if(strcmp(argv[i],"-help")==0)
 	  	  {
-		  	  printf(1,"something");
+		  	  printf(1,"find PATH [OPTIONS] [PREDS]\n-follow Dereference symbolic links\n-help Help\n-name filename\n-size (+/-)n\n-type c d-directory, f-regular file, s-symbolic link\n");
+		  	  exit();
 	  	  }
 	  else if(strcmp(argv[i],"-name")==0)
 	  	  {
