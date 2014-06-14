@@ -666,6 +666,7 @@ skipelem(char *path, char *name)
 static struct inode*
 namex(char *path, int nameiparent, char *name, int mode) // mode - 0-reference 1-dereference
 {
+
   struct inode *ip, *next;
   char buf[100];
   if(*path == '/')

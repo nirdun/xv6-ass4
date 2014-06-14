@@ -308,21 +308,20 @@ sys_open(void)
   int fd, omode;
   struct file *f;
   struct inode *ip;
-  int mode = 0;
 
   if(argstr(0, &path) < 0 || argint(1, &omode) < 0)
     return -1;
   if(omode & O_CREATE){
     begin_trans();
-    ip = create(path, T_FILE, 0, 0, !(mode & O_IDREF));
+    ip = create(path, T_FILE, 0, 0, !(omode & O_IDREF));
     commit_trans();
     if(ip == 0)
       return -1;
   } else {
-    if((ip = namei(path, !(mode & O_IDREF))) == 0)
+    if((ip = namei(path, !(omode & O_IDREF))) == 0)
       return -1;
     ilock(ip);
-    if(ip->type == T_DIR && omode != O_RDONLY){
+    if(ip->type == T_DIR && ((omode != O_RDONLY) && (omode != O_IDREF))){
       iunlockput(ip);
       return -1;
     }
@@ -657,6 +656,10 @@ recursive_readlink(char* pathname, struct inode* source, int recursive_counter, 
 
 	iunlockput(ip);
 
+	// copy the name of the link file for we can return it by pathname parameter
+	memmove(pathname, buf, n);
+	pathname[n] ='\0';
+
 	return recursive_readlink(buf,0, --recursive_counter, 1);
 
 	bad:
@@ -671,19 +674,24 @@ sys_readlink(void)
 	char *pathname;
 	char* buf;
 	int bufsize;
-	struct inode  *ip;
 
 	if(argstr(0, &pathname) < 0 || argstr(1, &buf) < 0 || argint(2,&bufsize)<0)
 		return -1;
 
-	if((ip = recursive_readlink(pathname,0, 16, 1))==0)
-		return -1;
-	ilock(ip);
-	if(readi(ip,buf,0,bufsize) < 0 )
+	if(recursive_readlink(pathname,0, 16, 1)==0)
 	{
-		iunlock(ip);
 		return -1;
 	}
+	else
+	{
+		int n = strlen(pathname);
+		if(bufsize < n)
+		{
+			n = bufsize;
+		}
 
-	return 0;
+		memmove(buf,pathname, n);
+		buf[n] ='\0';
+		return n;
+	}
 }

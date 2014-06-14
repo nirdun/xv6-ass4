@@ -2,6 +2,7 @@
 #include "stat.h"
 #include "user.h"
 #include "fs.h"
+#include "fcntl.h"
 
 int n=0; //Name
 int s=0; //Size 1-Exactly, 2-More, 3-Less
@@ -36,7 +37,14 @@ find(char *path)
   struct dirent de;
   struct stat st;
   
-  if((fd = open(path, 0)) < 0){
+  if(f)
+  {
+	  // we drefrence here and not in open function becuase open function
+	  // will drefrence the las refrence and then we can not know the name of it
+	  readlink(path, path, 100);
+  }
+
+  if((fd = open(path, O_IDREF)) < 0){
     printf(2, "find: cannot open %s\n", path);
     return;
   }
@@ -47,14 +55,27 @@ find(char *path)
     return;
   }
   
-  if(st.type==T_FILE || st.type==T_DIR)
+  if(st.type==T_FILE  || st.type==T_DIR || st.type==T_SYM)
   {
+
 	char* FileName = fmtname(path);
+
+
+	if(st.type==T_SYM )
+	{
+
+		if(f)
+		{
+
+//			readlink(FileName, FileName, 100);
+		}
+	}
 
 	int Isprint = 1;
 	if((n && (strcmp(FileName,name)!=0)) ||
 	   (t && type =='d' && st.type!=T_DIR) ||
 	   (t && type =='f' && st.type!=T_FILE) ||
+	   (t && type =='s' && st.type!=T_SYM) ||
 	   ((s == 1) && st.size != size) ||
 	   ((s == 2) && st.size <= size) ||
 	   ((s == 3) && st.size >= size))
