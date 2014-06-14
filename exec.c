@@ -19,7 +19,6 @@ exec(char *path, char **argv)
   struct inode *ip;
   struct proghdr ph;
   pde_t *pgdir, *oldpgdir;
-
   if((ip = namei(path, 1)) == 0)
     return -1;
   ilock(ip);

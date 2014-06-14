@@ -240,7 +240,7 @@ bad:
 static struct inode*
 create(char *path, short type, short major, short minor, int mode) // mode 0-reference 1-derefernce
 {
-	int n;
+
   uint off;
   struct inode *ip, *dp;
   char name[DIRSIZ], buf[100];
@@ -257,18 +257,8 @@ create(char *path, short type, short major, short minor, int mode) // mode 0-ref
     {
     	if(mode)
     	{
-    		if((n = readi(ip,buf,0,ip->size)) < 0 )
-    			{
-    				iunlockput(ip);
-    				return 0;
-    			}
-    		else
+    		if((ip = recursive_readlink(buf,ip, 16, 1)) == 0)
     		{
-    			buf[n]='\0';
-    		}
-    		if((ip = recursive_readlink(buf,16, 1)) == 0)
-    		{
-    			iunlockput(ip);
     			return 0;
     		}
     	}
@@ -633,9 +623,8 @@ sys_symlink(void)
 }
 
 struct inode*
-recursive_readlink(char* pathname, int recursive_counter, int lock)
+recursive_readlink(char* pathname, struct inode* source, int recursive_counter, int lock)
 {
-	//cprintf("Enter recussive pathname: %s counter %d\n", pathname, recursive_counter);
 	struct inode *ip;
 	char buf[100];
 	int n;
@@ -645,23 +634,30 @@ recursive_readlink(char* pathname, int recursive_counter, int lock)
 		return 0;
 	}
 
-	ip = namei(pathname, 0);
+	if(source == 0)
+	{
+		ip = namei(pathname, 0);
+	}
+	else
+	{
+		ip = source;
+	}
 
-	if(lock)
-		ilock(ip);
+	ilock(ip);
 
 	if(ip->type!=T_SYM)
 	{
-		//iunlockput(ip);
+		iunlock(ip);
 		return ip;
 	}
 
 	if ((n = readi(ip, buf,0, ip->size)) < 0)
 		goto bad;
 	buf[n]='\0';
+
 	iunlockput(ip);
-//	cprintf("recursive counter %d\n",recursive_counter);
-	return recursive_readlink(buf,--recursive_counter, 1);
+
+	return recursive_readlink(buf,0, --recursive_counter, 1);
 
 	bad:
 		iunlockput(ip);
@@ -680,7 +676,7 @@ sys_readlink(void)
 	if(argstr(0, &pathname) < 0 || argstr(1, &buf) < 0 || argint(2,&bufsize)<0)
 		return -1;
 
-	if((ip = recursive_readlink(pathname, 16, 1))==0)
+	if((ip = recursive_readlink(pathname,0, 16, 1))==0)
 		return -1;
 	ilock(ip);
 	if(readi(ip,buf,0,bufsize) < 0 )

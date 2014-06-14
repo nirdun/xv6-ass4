@@ -291,9 +291,6 @@ ilock(struct inode *ip)
 
   if(ip == 0 || ip->ref < 1)
   {
-	  cprintf("ip %d\n",ip);
-	  if(ip!=0)
-		  cprintf("ref %d\n",ip->ref);
 	  panic("ilock");
   }
 
@@ -669,7 +666,6 @@ skipelem(char *path, char *name)
 static struct inode*
 namex(char *path, int nameiparent, char *name, int mode) // mode - 0-reference 1-dereference
 {
-//	cprintf("namex path %s parent %d  mode %d\n", path, nameiparent, mode);
   struct inode *ip, *next;
   char buf[100];
   if(*path == '/')
@@ -678,46 +674,38 @@ namex(char *path, int nameiparent, char *name, int mode) // mode - 0-reference 1
     ip = idup(proc->cwd);
 
   while((path = skipelem(path, name)) != 0){
-//	  cprintf("path %s \n",path);
-	 ilock(ip);
+	  ilock(ip);
+
     if(ip->type != T_DIR){
-  //  	cprintf("1 \n");
       iunlockput(ip);
       return 0;
     }
- //   cprintf("2 \n");
+
     if(nameiparent && *path == '\0'){
-   // 	cprintf("3 \n");
       // Stop one level early.
       iunlock(ip);
       return ip;
     }
-  //  cprintf("4 name: %s \n", name);
+
     if((next = dirlookup(ip, name, 0)) == 0){
-  //  	cprintf("5 \n");
       iunlockput(ip);
       return 0;
     }
+
     iunlockput(ip);
-    if( next->type==T_SYM && (mode || *path!='\0') )
-  //  cprintf("next type: %d", next->type);
-    //if(1 && next->type==T_SYM)
+
+    if(mode || *path!='\0')
     {
-    //	cprintf("6 \n");
-
-    	int n = readi(next,buf,0,next->size);
-    	buf[n]='\0';
-    	//cprintf("readi amount %d buffer %s\n",n, buf);
-    	next= recursive_readlink(buf,16, 0);
-
+    	next= recursive_readlink(buf,next, 16, 0);
     }
-  //  cprintf("7 \n");
+
     ip = next;
   }
   if(nameiparent){
     iput(ip);
     return 0;
   }
+
   return ip;
 }
 
