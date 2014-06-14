@@ -243,7 +243,7 @@ create(char *path, short type, short major, short minor, int mode) // mode 0-ref
 
   uint off;
   struct inode *ip, *dp;
-  char name[DIRSIZ], buf[100];
+  char name[DIRSIZ], buf[64];
 
   if((dp = nameiparent(path, name)) == 0)
     return 0;
@@ -627,7 +627,7 @@ recursive_readlink(char* pathname, struct inode* source, int recursive_counter, 
 
 
 	struct inode *ip;
-	char buf[100];
+	char buf[64];
 	int n;
 
 	if(recursive_counter == 0)

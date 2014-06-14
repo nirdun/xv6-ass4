@@ -668,7 +668,7 @@ namex(char *path, int nameiparent, char *name, int mode) // mode - 0-reference 1
 {
 
   struct inode *ip, *next;
-  char buf[100];
+  char buf[64];
   if(*path == '/')
     ip = iget(ROOTDEV, ROOTINO);
   else
