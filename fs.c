@@ -669,7 +669,6 @@ skipelem(char *path, char *name)
 static struct inode*
 namex(char *path, int nameiparent, char *name, int mode) // mode - 0-reference 1-dereference
 {
-	cprintf("namex path %s nameiparent %d  mode %d\n", path, nameiparent, mode);
   struct inode *ip, *next;
   char buf[100];
   if(*path == '/')
@@ -678,7 +677,6 @@ namex(char *path, int nameiparent, char *name, int mode) // mode - 0-reference 1
     ip = idup(proc->cwd);
 
   while((path = skipelem(path, name)) != 0){
-	  cprintf("path %s ip %d\n",path,ip);
 	 ilock(ip);
     if(ip->type != T_DIR){
       iunlockput(ip);
@@ -694,17 +692,16 @@ namex(char *path, int nameiparent, char *name, int mode) // mode - 0-reference 1
       return 0;
     }
     iunlockput(ip);
-    if(next->type==T_SYM && (mode || *path!='\0') )
+    if((next->type==T_SYM))
     {
 
     	int n = readi(next,buf,0,next->size);
     	buf[n]='\0';
-    	cprintf("readi amount %d buffer %s\n",n, buf);
     	next= recursive_readlink(buf,16);
-    	cprintf("next %d\n",next);
 
     }
     ip = next;
+    next=0;
   }
   if(nameiparent){
     iput(ip);

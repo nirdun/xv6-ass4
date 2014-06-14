@@ -244,36 +244,42 @@ create(char *path, short type, short major, short minor, int mode) // mode 0-ref
   uint off;
   struct inode *ip, *dp;
   char name[DIRSIZ], buf[100];
-
   if((dp = nameiparent(path, name)) == 0)
     return 0;
+
   ilock(dp);
 
   if((ip = dirlookup(dp, name, &off)) != 0){
     iunlockput(dp);
     ilock(ip);
 
+
     if(ip->type == T_SYM) // the file is already exist and it is symbol link
     {
+
     	if(mode)
     	{
     		if((n = readi(ip,buf,0,ip->size)) < 0 )
     			{
+
     				iunlockput(ip);
     				return 0;
     			}
     		else
     		{
+
     			buf[n]='\0';
     		}
     		if((ip = recursive_readlink(buf,16)) == 0)
     		{
+
     			iunlockput(ip);
     			return 0;
     		}
     	}
     	else
     	{
+
     		return ip;
     	}
     }
@@ -298,6 +304,7 @@ create(char *path, short type, short major, short minor, int mode) // mode 0-ref
   if(type == T_DIR){  // Create . and .. entries.
     dp->nlink++;  // for ".."
     iupdate(dp);
+
     // No ip->nlink++ for ".": avoid cyclic ref count.
     if(dirlink(ip, ".", ip->inum) < 0 || dirlink(ip, "..", dp->inum) < 0)
       panic("create dots");
@@ -616,10 +623,8 @@ sys_symlink(void)
 		return -1;
 	//if((ip = namei(old)) == 0)
 	//	return -1;
-
 	begin_trans();
 	ip = create(new, T_SYM, 0, 0, 0);
-
 	if (writei(ip, old,0, strlen(old)) < 0)
 		goto bad;
 	iunlockput(ip);
@@ -635,7 +640,7 @@ sys_symlink(void)
 struct inode*
 recursive_readlink(char* pathname, int recursive_counter)
 {
-	cprintf("Enter recussive pathname: %s counter %d\n", pathname, recursive_counter);
+
 	struct inode *ip;
 	char buf[100];
 	int n;
@@ -647,7 +652,6 @@ recursive_readlink(char* pathname, int recursive_counter)
 
 	ip = namei(pathname, 0);
 
-	ilock(ip);
 	if(ip->type!=T_SYM)
 	{
 		//iunlockput(ip);
@@ -658,7 +662,6 @@ recursive_readlink(char* pathname, int recursive_counter)
 		goto bad;
 	buf[n]='\0';
 	iunlockput(ip);
-	cprintf("recursive counter %d\n",recursive_counter);
 	return recursive_readlink(buf,--recursive_counter);
 
 	bad:

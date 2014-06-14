@@ -1,7 +1,7 @@
 #define T_DIR  1   // Directory
 #define T_FILE 2   // File
 #define T_DEV  3   // Special device
-#define	T_SYM	4
+#define	T_SYM	55
 
 struct stat {
   short type;  // Type of file
