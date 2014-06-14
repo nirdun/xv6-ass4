@@ -9,7 +9,7 @@ struct stat;
 struct superblock;
 
 // sysfile.c
-struct inode* recursive_readlink(char* pathname, int recursive_counter);
+struct inode* recursive_readlink(char* pathname, int recursive_counter, int lock);
 
 // bio.c
 void            binit(void);

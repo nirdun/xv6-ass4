@@ -14,7 +14,7 @@
 #include "file.h"
 #include "fcntl.h"
 
-struct inode* recursive_readlink(char* pathname, int recursive_counter);
+//struct inode* recursive_readlink(char* pathname, int recursive_counter, int );
 
 // Fetch the nth word-sized system call argument as a file descriptor
 // and return both the descriptor and the corresponding struct file.
@@ -266,7 +266,7 @@ create(char *path, short type, short major, short minor, int mode) // mode 0-ref
     		{
     			buf[n]='\0';
     		}
-    		if((ip = recursive_readlink(buf,16)) == 0)
+    		if((ip = recursive_readlink(buf,16, 1)) == 0)
     		{
     			iunlockput(ip);
     			return 0;
@@ -633,9 +633,9 @@ sys_symlink(void)
 }
 
 struct inode*
-recursive_readlink(char* pathname, int recursive_counter)
+recursive_readlink(char* pathname, int recursive_counter, int lock)
 {
-	cprintf("Enter recussive pathname: %s counter %d\n", pathname, recursive_counter);
+	//cprintf("Enter recussive pathname: %s counter %d\n", pathname, recursive_counter);
 	struct inode *ip;
 	char buf[100];
 	int n;
@@ -647,7 +647,9 @@ recursive_readlink(char* pathname, int recursive_counter)
 
 	ip = namei(pathname, 0);
 
-	ilock(ip);
+	if(lock)
+		ilock(ip);
+
 	if(ip->type!=T_SYM)
 	{
 		//iunlockput(ip);
@@ -658,8 +660,8 @@ recursive_readlink(char* pathname, int recursive_counter)
 		goto bad;
 	buf[n]='\0';
 	iunlockput(ip);
-	cprintf("recursive counter %d\n",recursive_counter);
-	return recursive_readlink(buf,--recursive_counter);
+//	cprintf("recursive counter %d\n",recursive_counter);
+	return recursive_readlink(buf,--recursive_counter, 1);
 
 	bad:
 		iunlockput(ip);
@@ -678,7 +680,7 @@ sys_readlink(void)
 	if(argstr(0, &pathname) < 0 || argstr(1, &buf) < 0 || argint(2,&bufsize)<0)
 		return -1;
 
-	if((ip = recursive_readlink(pathname, 16))==0)
+	if((ip = recursive_readlink(pathname, 16, 1))==0)
 		return -1;
 	ilock(ip);
 	if(readi(ip,buf,0,bufsize) < 0 )
