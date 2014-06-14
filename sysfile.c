@@ -624,6 +624,8 @@ sys_symlink(void)
 struct inode*
 recursive_readlink(char* pathname, struct inode* source, int recursive_counter, int lock)
 {
+
+
 	struct inode *ip;
 	char buf[100];
 	int n;
@@ -660,7 +662,7 @@ recursive_readlink(char* pathname, struct inode* source, int recursive_counter, 
 	memmove(pathname, buf, n);
 	pathname[n] ='\0';
 
-	return recursive_readlink(buf,0, --recursive_counter, 1);
+	return recursive_readlink(pathname,0, --recursive_counter, 1);
 
 	bad:
 		iunlockput(ip);
